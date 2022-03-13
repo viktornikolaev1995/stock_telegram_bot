@@ -9,5 +9,5 @@ class CategorySchema(BaseModel):
 class ItemSchema(BaseModel):
     title: str
     description: str = ''
-    category: int = 1
+    # category_id: int = None
     archive: bool = False

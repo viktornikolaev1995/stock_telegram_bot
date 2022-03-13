@@ -19,7 +19,7 @@ class Item(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     description = Column(String, default='')
-    category_id = Column(Integer, ForeignKey('categories.id'))
+    category_id = Column(Integer, ForeignKey('categories.id'), default=None)
     archive = Column(Boolean, default=False)
 
-    category = relationship('Category', back_populates='items')
+    category = relationship('Category', cascade='all,delete', back_populates='items')

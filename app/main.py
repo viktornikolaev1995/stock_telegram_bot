@@ -32,9 +32,12 @@ def retrieve_item(item_id: int, db: Session = Depends(get_db)):
     return item
 
 
-# @app.post('/items')
-# def create_item(item: ItemSchema):
-#     return item
+@app.post('/items/', response_model=schemas.ItemSchema)
+def create_item(item: schemas.ItemSchema, category_id: int = None, db: Session = Depends(get_db)):
+    if category_id is not None:
+        return crud.create_item(db, item=item, category_id=category_id)
+    return crud.create_item(db, item=item, category_id=None)
+
 
 
 

@@ -14,3 +14,14 @@ def get_items(db: Session, offset: int = 0, limit: int = 5):
 def get_items_at_category(db: Session, category_id, offset: int = 0, limit: int = 5):
     return db.query(Item).offset(offset).limit(limit).filter(Item.category_id == category_id)
 
+
+def create_item(db: Session, item: ItemSchema, category_id: int = None):
+    item = Item(**item.dict(), category_id=category_id)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+
+
