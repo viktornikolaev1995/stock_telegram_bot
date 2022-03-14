@@ -23,3 +23,4 @@ class Item(Base):
     archive = Column(Boolean, default=False)
 
     category = relationship('Category', cascade='all,delete', back_populates='items')
+

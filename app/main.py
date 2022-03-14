@@ -18,13 +18,19 @@ def get_db():
         db.close()
 
 
-@app.get('/items/', response_model=List[schemas.ItemSchema])
+@app.get('/categories/', response_model=List[schemas.CategoryListSchema])
+def retrieve_categories(offset: int = 0, limit: int = 5, db: Session = Depends(get_db)):
+    categories = crud.get_categories(db, offset=offset, limit=limit)
+    return categories
+
+
+@app.get('/items/', response_model=List[schemas.ItemListSchema])
 def retrieve_items(offset: int = 0, limit: int = 5, db: Session = Depends(get_db)):
     items = crud.get_items(db, offset=offset, limit=limit)
     return items
 
 
-@app.get('/items/{id}/', response_model=schemas.ItemSchema)
+@app.get('/items/{id}/', response_model=schemas.ItemListSchema)
 def retrieve_item(item_id: int, db: Session = Depends(get_db)):
     item = crud.get_item(db, item_id=item_id)
     if item is None:
@@ -32,11 +38,14 @@ def retrieve_item(item_id: int, db: Session = Depends(get_db)):
     return item
 
 
-@app.post('/items/', response_model=schemas.ItemSchema)
-def create_item(item: schemas.ItemSchema, category_id: int = None, db: Session = Depends(get_db)):
-    if category_id is not None:
-        return crud.create_item(db, item=item, category_id=category_id)
-    return crud.create_item(db, item=item, category_id=None)
+@app.post('/categories/', response_model=schemas.CategoryCreateSchema)
+def create_category(category: schemas.CategoryCreateSchema, db: Session = Depends(get_db)):
+    return crud.create_category(db, category=category)
+
+
+@app.post('/items/', response_model=schemas.ItemCreateSchema)
+def create_item(item: schemas.ItemCreateSchema, db: Session = Depends(get_db)):
+    return crud.create_item(db, item=item)
 
 
 
