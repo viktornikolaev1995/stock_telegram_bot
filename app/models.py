@@ -1,26 +1,39 @@
-from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .database import Base
 
 
-class Category(Base):
-    __tablename__ = 'categories'
+association_table = Table(
+    'association', Base.metadata,
+    Column('stock', ForeignKey('stock.id'), primary_key=True),
+    Column('user', ForeignKey('user.id'), primary_key=True)
+)
+
+
+class Stock(Base):
+    __tablename__ = 'stock'
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
+    name = Column(String, default='')
+    symbol = Column(String, unique=True)
     description = Column(String, default='')
+    users = relationship(
+        'User',
+        secondary=association_table,
+        back_populate='users'
+    )
 
-    items = relationship('Item', back_populates='category')
 
-
-class Item(Base):
-    __tablename__ = 'items'
+class User(Base):
+    __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String, default='')
-    category_id = Column(Integer, ForeignKey('categories.id'), default=None)
-    archive = Column(Boolean, default=False)
+    first_name = Column(String)
+    username = Column(String, index=True)
+    stocks = relationship(
+        Stock,
+        secondary=association_table,
+        back_populates='stocks'
+    )
 
-    category = relationship('Category', cascade='all,delete', back_populates='items')
 

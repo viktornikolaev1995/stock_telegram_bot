@@ -1,12 +1,13 @@
+import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
-from .database import SessionLocal, engine
-from . import crud, models, schemas
+from database import SessionLocal, engine
+import crud, models, schemas
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title='StockCrypto')
 
 
 # Dependency
@@ -49,7 +50,8 @@ def create_item(item: schemas.ItemCreateSchema, db: Session = Depends(get_db)):
 
 
 
-
+if __name__ == '__main__':
+    uvicorn.run(app, host='127.0.0.1', port=8000)
 
 
 

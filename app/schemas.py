@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class CategoryCreateSchema(BaseModel):
+class StockCreateSchema(BaseModel):
     title: str
     description: str = ''
 
@@ -9,7 +9,7 @@ class CategoryCreateSchema(BaseModel):
         orm_mode = True
 
 
-class CategoryListSchema(BaseModel):
+class StockListSchema(BaseModel):
     id: int
     title: str
     description: str = ''
