@@ -3,6 +3,8 @@ import logging
 import re
 from datetime import datetime
 
+import aiohttp
+import requests
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
@@ -10,6 +12,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import message, Message
 
 from aiogram.utils.markdown import text
+
 
 from invest_data import get_stocks_info
 
@@ -47,12 +50,27 @@ async def process_stock(message: types.Message, state: FSMContext):
     """
     Process stock
     """
-    async with state.proxy() as data:
-        data['stock'] = message.text
-        print(data['stock'])
-        print(message.from_user)
-    await Stock.next()
-    await message.reply('Cool! Your portfolio is ready!')
+    match = re.findall(pattern=r'[ ]*\w+[ ]*', string=message.text)
+    stocks = [mat.replace(' ', '') for mat in match]
+    print(stocks)
+    id = message.from_user['id']
+    first_name = message.from_user['first_name']
+    username = message.from_user['username']
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        "id": id,
+        "first_name": first_name,
+        "username": username,
+        "stocks": []
+    }
+
+    async with aiohttp.ClientSession('http://127.0.0.1:8000/users/') as session:
+        async with session.post('/post', headers=headers, data=data):
+            await message.reply('Cool! Your portfolio is ready!')
+
 # @dp.message_handler(commands=['start'])
 # async def start(message):
 #     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
@@ -128,5 +146,5 @@ async def periodic(sleep_for):
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.create_task(periodic(10))
+    loop.create_task(periodic(300))
     executor.start_polling(dp, skip_updates=True)

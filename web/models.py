@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from .database import Base
 
 
-association_table = Table(
+StockUserRelation = Table(
     'association', Base.metadata,
     Column('stock', ForeignKey('stock.id'), primary_key=True),
     Column('user', ForeignKey('user.id'), primary_key=True)
@@ -19,8 +19,8 @@ class Stock(Base):
     description = Column(String, default='')
     users = relationship(
         'User',
-        secondary=association_table,
-        back_populate='users'
+        secondary=StockUserRelation,
+        backref='users'
     )
 
 
@@ -32,8 +32,8 @@ class User(Base):
     username = Column(String, index=True)
     stocks = relationship(
         Stock,
-        secondary=association_table,
-        back_populates='stocks'
+        secondary=StockUserRelation,
+        backref='stocks'
     )
 
 
