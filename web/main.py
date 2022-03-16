@@ -2,9 +2,7 @@ import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
-from . import models
-from . import schemas
-from . import crud
+from . import models, schemas, crud
 from .database import SessionLocal, engine
 
 
@@ -28,9 +26,9 @@ def retrieve_stocks(offset: int = 0, limit: int = 5, db: Session = Depends(get_d
     return stocks
 
 
-@app.get('/stocks/{id}/', response_model=schemas.StockSchema)
-def retrieve_stock(stock_id, db: Session = Depends(get_db)):
-    stock = crud.get_stock(db, stock_id=stock_id)
+@app.get('/stocks/{symbol}/', response_model=schemas.StockSchema)
+def retrieve_stock(stock_symbol, db: Session = Depends(get_db)):
+    stock = crud.get_stock(db, stock_symbol=stock_symbol)
 
     if stock is None:
         raise HTTPException(status_code=404, detail='Stock not found')
@@ -59,14 +57,10 @@ def create_stock(stock: schemas.StockCreateSchema, db: Session = Depends(get_db)
     return crud.create_stock(db, stock=stock)
 
 
-@app.post('/users/', response_model=schemas.UserCreateSchema)
+@app.post('/users/', response_model=schemas.UserSchema)
 def create_user(user: schemas.UserCreateSchema, db: Session = Depends(get_db)):
     return crud.create_user(db, user=user)
 
-
-
-if __name__ == '__main__':
-    uvicorn.run(app, host='127.0.0.1', port=8000)
 
 
 

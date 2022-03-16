@@ -4,7 +4,7 @@ from .database import Base
 
 
 StockUserRelation = Table(
-    'association', Base.metadata,
+    'stockuserrelation', Base.metadata,
     Column('stock', ForeignKey('stock.id'), primary_key=True),
     Column('user', ForeignKey('user.id'), primary_key=True)
 )
@@ -20,7 +20,7 @@ class Stock(Base):
     users = relationship(
         'User',
         secondary=StockUserRelation,
-        backref='users'
+        back_populates='stocks'
     )
 
 
@@ -33,7 +33,7 @@ class User(Base):
     stocks = relationship(
         Stock,
         secondary=StockUserRelation,
-        backref='stocks'
+        back_populates='users'
     )
 
 

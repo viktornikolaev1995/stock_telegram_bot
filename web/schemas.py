@@ -1,35 +1,40 @@
-from typing import List
-
+from typing import List, Optional
 from pydantic import BaseModel
 
 
 class StockBase(BaseModel):
-    title: str
-    description: str = ''
+    id: int = 1
 
     class Config:
         orm_mode = True
 
 
-class StockCreateSchema(StockBase):
-    pass
-
-
 class StockSchema(StockBase):
-    id: int
+    name: Optional[str]
+    symbol: str
+    description: Optional[str]
+
+
+class StockCreateSchema(BaseModel):
+    name: Optional[str]
+    symbol: str
+    description: Optional[str]
+
+    class Config:
+        orm_mode = True
 
 
 class UserBase(BaseModel):
-    id: int
+    id: int = 1
     first_name: str
-    username: str = ''
+    username: str
 
     class Config:
         orm_mode = True
 
 
 class UserCreateSchema(UserBase):
-    stocks: List[StockBase] = []
+    stocks: List[int] = []
 
 
 class UserSchema(UserBase):
