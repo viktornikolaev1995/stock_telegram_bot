@@ -62,6 +62,9 @@ def create_user(user: schemas.UserCreateSchema, db: Session = Depends(get_db)):
     return crud.create_user(db, user=user)
 
 
+@app.delete('/users/{id}/', tags=['users'])
+def delete_user(user_id: int = 1, db: Session = Depends(get_db)):
+    return crud.delete_user(db, user_id=user_id)
 
 
 
