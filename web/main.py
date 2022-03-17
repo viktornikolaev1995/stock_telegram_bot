@@ -20,13 +20,13 @@ def get_db():
         db.close()
 
 
-@app.get('/stocks/', response_model=List[schemas.StockSchema])
+@app.get('/stocks/', response_model=List[schemas.StockSchema], tags=['stocks'])
 def retrieve_stocks(offset: int = 0, limit: int = 5, db: Session = Depends(get_db)):
     stocks = crud.get_stocks(db, offset=offset, limit=limit)
     return stocks
 
 
-@app.get('/stocks/{symbol}/', response_model=schemas.StockSchema)
+@app.get('/stocks/{symbol}/', response_model=schemas.StockSchema, tags=['stocks'])
 def retrieve_stock(stock_symbol, db: Session = Depends(get_db)):
     stock = crud.get_stock(db, stock_symbol=stock_symbol)
 
@@ -36,13 +36,13 @@ def retrieve_stock(stock_symbol, db: Session = Depends(get_db)):
     return stock
 
 
-@app.get('/users/', response_model=List[schemas.UserSchema])
+@app.get('/users/', response_model=List[schemas.UserSchema], tags=['users'])
 def retrieve_users(offset: int = 0, limit: int = 5, db: Session = Depends(get_db)):
     users = crud.get_users(db, offset=offset, limit=limit)
     return users
 
 
-@app.get('/users/{id}/', response_model=schemas.UserSchema)
+@app.get('/users/{id}/', response_model=schemas.UserSchema, tags=['users'])
 def retrieve_user(user_id, db: Session = Depends(get_db)):
     user = crud.get_user(db, user_id=user_id)
 
@@ -52,12 +52,12 @@ def retrieve_user(user_id, db: Session = Depends(get_db)):
     return user
 
 
-@app.post('/stocks/', response_model=schemas.StockCreateSchema)
+@app.post('/stocks/', response_model=schemas.StockCreateSchema, tags=['stocks'])
 def create_stock(stock: schemas.StockCreateSchema, db: Session = Depends(get_db)):
     return crud.create_stock(db, stock=stock)
 
 
-@app.post('/users/', response_model=schemas.UserSchema)
+@app.post('/users/', response_model=schemas.UserSchema, tags=['users'])
 def create_user(user: schemas.UserCreateSchema, db: Session = Depends(get_db)):
     return crud.create_user(db, user=user)
 
