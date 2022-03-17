@@ -41,4 +41,10 @@ def create_user(db: Session, user: UserCreateSchema):
 
 
 
+def delete_user(db: Session, user_id):
+    db.query(User).filter(User.id == user_id).delete()
+    db.commit()
+    return {'204': 'Successful Response'}
+
+
 
