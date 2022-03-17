@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import re
 from datetime import datetime
@@ -54,12 +55,16 @@ async def process_stock(message: types.Message, state: FSMContext):
     stocks = [mat.replace(' ', '') for mat in match]
     print(stocks)
     id = message.from_user['id']
+    print(id), print(type(id))
     first_name = message.from_user['first_name']
+    print(first_name), print(type(first_name))
     username = message.from_user['username']
+    print(username), print(type(username))
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     }
+
     data = {
         "id": id,
         "first_name": first_name,
@@ -67,9 +72,19 @@ async def process_stock(message: types.Message, state: FSMContext):
         "stocks": []
     }
 
-    async with aiohttp.ClientSession('http://127.0.0.1:8000/users/') as session:
-        async with session.post('/post', headers=headers, data=data):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+                'http://127.0.0.1:8000/users/', data=json.dumps(data)) as response:
+
+            print(await response.text())
+            print(response.headers)
+
+
             await message.reply('Cool! Your portfolio is ready!')
+            await session.close()
+
+
+
 
 # @dp.message_handler(commands=['start'])
 # async def start(message):
@@ -148,3 +163,33 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(periodic(300))
     executor.start_polling(dp, skip_updates=True)
+
+
+
+# from fastapi import FastAPI
+# from time import time
+# import aiohttp
+# import asyncio
+#
+# app = FastAPI()
+#
+# URL = "http://httpbin.org/uuid"
+#
+#
+# async def request(session):
+#     async with session.get(URL) as response:
+#         return await response.text()
+#
+#
+# async def task():
+#     async with aiohttp.ClientSession() as session:
+#         tasks = [request(session) for i in range(100)]
+#         result = await asyncio.gather(*tasks)
+#         print(result)
+#
+#
+# @app.get('/')
+# async def f():
+#     start = time()
+#     await task()
+#     print("time: ", time() - start)
