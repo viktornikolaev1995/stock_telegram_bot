@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from .schemas import StockCreateSchema, UserCreateSchema
-from .models import Stock, User
+from .models import Stock, User, StockUserRelation
 
 
 def get_stocks(db: Session, offset: int = 0, limit: int = 5):
@@ -40,11 +40,14 @@ def create_user(db: Session, user: UserCreateSchema):
     return db_user
 
 
-
-def delete_user(db: Session, user_id):
-    db.query(User).filter(User.id == user_id).delete()
+def delete_stock(db: Session, stock_id):
+    db.query(Stock).filter(Stock.id == stock_id).delete()
     db.commit()
     return {'204': 'Successful Response'}
 
 
-
+def delete_user(db: Session, user_id):
+    db.query(StockUserRelation).filter(StockUserRelation.user_id == user_id).delete()
+    db.query(User).filter(User.id == user_id).delete()
+    db.commit()
+    return {'204': 'Successful Response'}

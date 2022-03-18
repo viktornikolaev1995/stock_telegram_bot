@@ -22,54 +22,59 @@ import investpy
 # print(f'united_states_stocks:\n{united_states_stocks}')
 
 
-def get_stocks_info(tickers, country):
-    """Получает информацию о дневной торговой сессии, описании, url по тикеру компании и стране"""
+def get_stock_short_info(symbol, country):
+    """Получает короткую информацию по тикеру компании и стране"""
+
+    stock_company_profile = investpy.stocks.get_stock_company_profile(symbol, country, language='english')
+    description = stock_company_profile['desc']  # описание компании
+    stock_data = investpy.get_stock_recent_data(symbol, country, as_json=True, order='descending', interval='Daily')
+    stock_info = json.loads(stock_data)
+    name = stock_info['name']  # наименование компании
+    symbol = symbol.upper()  # тикер компании
+
+    return {'name': name, 'symbol': symbol, 'description': description}
+
+
+def get_stocks_info(symbols, country):
+    """Получает информацию о дневной торговой сессии, описании, url по списку тикеров компаний и стране"""
 
     response = ''
-    for ticker in tickers:
+    for symbol in symbols:
         try:
-            # stock_info = investpy.get_stock_information(stock, country, as_json=True)
-            stock_company_profile = investpy.stocks.get_stock_company_profile(ticker, country, language='english')
-            """описание компании"""
-            company_info = stock_company_profile['desc']
+            stock_company_profile = investpy.stocks.get_stock_company_profile(symbol, country, language='english')
+            description = stock_company_profile['desc']  # описание компании
             company_profile_url = stock_company_profile['url']
             pattern = re.compile(r'(.+)-company-profile')
-            """url-адрес компании"""
-            company_url = re.findall(pattern, company_profile_url)[0]
-            stock_data = investpy.get_stock_recent_data(ticker, country, as_json=True, order='descending', interval='Daily')
+            company_url = re.findall(pattern, company_profile_url)[0]  # url-адрес компании
+            stock_data = investpy.get_stock_recent_data(symbol, country, as_json=True, order='descending', interval='Daily')
             stock_info = json.loads(stock_data)
-            """наименование компании"""
-            name = stock_info['name']
-            """тикер компании"""
-            ticker = ticker.upper()
-            """данные дневной торговой сессии"""
-            stock_daily_data = stock_info['recent'][0]
-            """дата торговой сессии"""
-            date = stock_daily_data['date']
+            name = stock_info['name']  # наименование компании
+            symbol = symbol.upper()  # тикер компании
+            stock_daily_data = stock_info['recent'][0]  # данные дневной торговой сессии"
+            date = stock_daily_data['date']  # дата торговой сессии
             date_obj = datetime.strptime(date, "%d/%m/%Y")
             date_in_other_format = datetime.strftime(date_obj, '%d %B, %Y')
-            """цена открытия, установленная в момент начала торговой сессии"""
-            open = stock_daily_data['open']
-            """дневной максимум цены акции"""
-            high = stock_daily_data['high']
-            """дневной минимум цены акции"""
-            low = stock_daily_data['low']
+            open = stock_daily_data['open']  # цена открытия, установленная в момент начала торговой сессии
+            high = stock_daily_data['high']  # дневной максимум цены акции
+            low = stock_daily_data['low']  # дневной минимум цены акции
+
             """цена закрытия акции, сформировавшаяся на момент закрытия торговой сессии"""
             close = stock_daily_data['close']
+
             """объем торгов (суммарное число акций, сменивших владельца за торговый период)"""
             volume = stock_daily_data['volume']
-            """в какой валюте торгуется акция"""
-            currency = stock_daily_data['currency']
+
+            currency = stock_daily_data['currency']  # в какой валюте торгуется акция
 
             if not response:
-                response += f'Portfolio:\nDate: {date}\n\nName: {name}\nSymbol: {ticker}\nOpen: {open}\nClose: {close}\n' \
+                response += f'Portfolio:\nDate: {date}\n\nName: {name}\nSymbol: {symbol}\nOpen: {open}\nClose: {close}\n' \
                             f'Volume: {volume}\nCurrency: {currency}\nCompany_url: {company_url}'
             else:
-                response += f'\n\nName: {name}\nSymbol: {ticker}\nOpen: {open}\nClose: {close}\n' \
+                response += f'\n\nName: {name}\nSymbol: {symbol}\nOpen: {open}\nClose: {close}\n' \
                             f'Volume: {volume}\nCurrency: {currency}\nCompany_url: {company_url}'
 
         except RuntimeError as error:
-            print(f'Проверьте правильное написание тикера компании или страны! Представлен тикер: {ticker}, '
+            print(f'Проверьте правильное написание тикера компании или страны! Представлен тикер: {symbol}, '
                   f'страна: {country}')
 
     return response

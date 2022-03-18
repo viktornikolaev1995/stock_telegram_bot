@@ -3,7 +3,6 @@ import json
 import logging
 import re
 from datetime import datetime
-
 import aiohttp
 import requests
 from aiogram import Bot, Dispatcher, executor, types
@@ -11,16 +10,11 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import message, Message
-
 from aiogram.utils.markdown import text
 
-
-from invest_data import get_stocks_info
-
+from invest_data import get_stocks_info, get_stocks, get_stock_short_info
 
 API_TOKEN = '5297026828:AAGixMBhUQ3Wl19TyjIAxNMt6UsPk8ztBDE'
-
-
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -53,7 +47,15 @@ async def process_stock(message: types.Message, state: FSMContext):
     """
     match = re.findall(pattern=r'[ ]*\w+[ ]*', string=message.text)
     stocks = [mat.replace(' ', '') for mat in match]
-    print(stocks)
+    stock_list = get_stocks(country='united states')  # stocks, existed in financial market
+    print(stock_list)
+    checked_stocks = [stock for stock in stocks if stock in stock_list]
+    print(f'checked_stocks: {checked_stocks}')
+    unchecked_stocks = list(set(stocks).difference(set(checked_stocks)))
+    print(f'unchecked_stocks: {unchecked_stocks}')
+
+
+
     id = message.from_user['id']
     print(id), print(type(id))
     first_name = message.from_user['first_name']
@@ -65,25 +67,63 @@ async def process_stock(message: types.Message, state: FSMContext):
         'Content-Type': 'application/json'
     }
 
-    data = {
-        "id": id,
-        "first_name": first_name,
-        "username": username,
-        "stocks": []
-    }
+    stock_id = []
 
     async with aiohttp.ClientSession() as session:
+
+        for stock in checked_stocks:
+            async with session.get('http://127.0.0.1:8000/stocks/{symbol}/', params={'stock_symbol': stock}) as response:
+
+                if response.status == 404:
+                    stock_data = get_stock_short_info(symbol=stock, country='united states')
+
+                    data = {
+                        "name": stock_data['name'],
+                        "symbol": stock_data['symbol'],
+                        "description": stock_data['description']
+                    }
+
+                    async with session.post('http://127.0.0.1:8000/stocks/', headers=headers, json=data) as response:
+                        res = json.loads(await response.text())
+                        stock_id.append(res.get('id'))
+                        print(res)
+                        print(res.get('id'))
+                        print(type(res))
+
+
+                        print(response.status)
+
+                else:
+                    res = json.loads(await response.text())
+                    stock_id.append(res.get('id'))
+                    print(res)
+                    print(res.get('id'))
+                    print(type(res))
+                    print(response.status)
+
+        data = {
+            "id": id,
+            "first_name": first_name,
+            "username": username,
+            "stocks": stock_id
+        }
+        print(f'data: {data}')
+
         async with session.post(
-                'http://127.0.0.1:8000/users/', data=json.dumps(data)) as response:
+                'http://127.0.0.1:8000/users/', headers=headers, json=data) as response:
 
             print(await response.text())
             print(response.headers)
 
+            await message.reply(f'Cool! Your portfolio is ready! All stocks symbols were included in your portfolio, '
+                                f'except following: {" ".join(unchecked_stocks)}')
 
-            await message.reply('Cool! Your portfolio is ready!')
-            await session.close()
 
-
+# try:
+#     obj = Person.objects.get(first_name='John', last_name='Lennon')
+# except Person.DoesNotExist:
+#     obj = Person(first_name='John', last_name='Lennon', birthday=date(1940, 10, 9))
+#     obj.save()
 
 
 # @dp.message_handler(commands=['start'])
@@ -147,21 +187,21 @@ async def look_portfolio(message: types.Message, state: FSMContext):
     print(message.from_user)
     await bot.send_message(message.chat.id, stocks_info)
 
-chat_ids = [806137443]
-
-
-async def periodic(sleep_for):
-    while True:
-        await asyncio.sleep(sleep_for)
-        now = datetime.utcnow()
-        print(f"{now}")
-        for id in chat_ids:
-            stocks_info = get_stocks_info(tickers=['NEE', 'MCD', 'INTC', 'KO'], country='united states')
-            await bot.send_message(id, stocks_info, disable_notification=False)
+# chat_ids = [806137443]
+#
+#
+# async def periodic(sleep_for):
+#     while True:
+#         await asyncio.sleep(sleep_for)
+#         now = datetime.utcnow()
+#         print(f"{now}")
+#         for id in chat_ids:
+#             stocks_info = get_stocks_info(tickers=['NEE', 'MCD', 'INTC', 'KO'], country='united states')
+#             await bot.send_message(id, stocks_info, disable_notification=False)
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.create_task(periodic(300))
+    # loop = asyncio.get_event_loop()
+    # loop.create_task(periodic(300))
     executor.start_polling(dp, skip_updates=True)
 
 

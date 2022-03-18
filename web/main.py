@@ -52,7 +52,7 @@ def retrieve_user(user_id, db: Session = Depends(get_db)):
     return user
 
 
-@app.post('/stocks/', response_model=schemas.StockCreateSchema, tags=['stocks'])
+@app.post('/stocks/', response_model=schemas.StockSchema, tags=['stocks'])
 def create_stock(stock: schemas.StockCreateSchema, db: Session = Depends(get_db)):
     return crud.create_stock(db, stock=stock)
 
@@ -60,6 +60,11 @@ def create_stock(stock: schemas.StockCreateSchema, db: Session = Depends(get_db)
 @app.post('/users/', response_model=schemas.UserSchema, tags=['users'])
 def create_user(user: schemas.UserCreateSchema, db: Session = Depends(get_db)):
     return crud.create_user(db, user=user)
+
+
+@app.delete('/stocks/{id}', tags=['stocks'])
+def delete_stock(stock_id: int = 1, db: Session = Depends(get_db)):
+    return crud.delete_stock(db, stock_id=stock_id)
 
 
 @app.delete('/users/{id}/', tags=['users'])
