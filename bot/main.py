@@ -78,9 +78,10 @@ async def process_stock(message: types.Message, state: FSMContext):
                     stock_data = get_stock_short_info(symbol=stock, country='united states')
 
                     data = {
-                        "name": stock_data['name'],
-                        "symbol": stock_data['symbol'],
-                        "description": stock_data['description']
+                        'name': stock_data['name'],
+                        'symbol': stock_data['symbol'],
+                        'description': stock_data['description'],
+                        'country': stock_data['country']
                     }
 
                     async with session.post('http://127.0.0.1:8000/stocks/', headers=headers, json=data) as response:
@@ -102,10 +103,10 @@ async def process_stock(message: types.Message, state: FSMContext):
                     print(response.status)
 
         data = {
-            "id": id,
-            "first_name": first_name,
-            "username": username,
-            "stocks": stock_id
+            'id': id,
+            'first_name': first_name,
+            'username': username,
+            'stocks': stock_id
         }
         print(f'data: {data}')
 
@@ -187,21 +188,30 @@ async def look_portfolio(message: types.Message, state: FSMContext):
     print(message.from_user)
     await bot.send_message(message.chat.id, stocks_info)
 
-# chat_ids = [806137443]
-#
-#
-# async def periodic(sleep_for):
-#     while True:
-#         await asyncio.sleep(sleep_for)
-#         now = datetime.utcnow()
-#         print(f"{now}")
-#         for id in chat_ids:
-#             stocks_info = get_stocks_info(tickers=['NEE', 'MCD', 'INTC', 'KO'], country='united states')
-#             await bot.send_message(id, stocks_info, disable_notification=False)
+
+
+
+async def periodic(sleep_for):
+
+    while True:
+        async with aiohttp.ClientSession() as session:
+            async with session.get('http://127.0.0.1:8000/users/') as response:
+                res = json.loads(await response.text())
+                print(res)
+
+        await asyncio.sleep(sleep_for)
+        now = datetime.utcnow()
+        print(f"{now}")
+
+        for d in res:
+            symbols = [stock['symbol'] for stock in d['stocks']]
+            stocks_info = get_stocks_info(symbols=symbols, country='united states')
+            await bot.send_message(chat_id=d['id'], text=stocks_info, disable_notification=False)
+
 
 if __name__ == '__main__':
-    # loop = asyncio.get_event_loop()
-    # loop.create_task(periodic(300))
+    loop = asyncio.get_event_loop()
+    loop.create_task(periodic(60))
     executor.start_polling(dp, skip_updates=True)
 
 

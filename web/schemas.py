@@ -4,21 +4,23 @@ from pydantic import BaseModel
 
 class StockBase(BaseModel):
     id: int = 1
+    name: Optional[str]
+    symbol: str
 
     class Config:
         orm_mode = True
 
 
 class StockSchema(StockBase):
-    name: Optional[str]
-    symbol: str
     description: Optional[str]
+    country: str
 
 
 class StockCreateSchema(BaseModel):
     name: Optional[str]
     symbol: str
     description: Optional[str]
+    country: str
 
     class Config:
         orm_mode = True
@@ -38,4 +40,4 @@ class UserCreateSchema(UserBase):
 
 
 class UserSchema(UserBase):
-    stocks: List[StockSchema] = []
+    stocks: List[StockBase] = []

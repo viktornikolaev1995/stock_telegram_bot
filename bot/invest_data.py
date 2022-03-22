@@ -32,7 +32,7 @@ def get_stock_short_info(symbol, country):
     name = stock_info['name']  # наименование компании
     symbol = symbol.upper()  # тикер компании
 
-    return {'name': name, 'symbol': symbol, 'description': description}
+    return {'name': name, 'symbol': symbol, 'description': description, 'country': 'united states'}
 
 
 def get_stocks_info(symbols, country):

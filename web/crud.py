@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy.orm import Session
 from .schemas import StockCreateSchema, UserCreateSchema
 from .models import Stock, User, StockUserRelation
@@ -11,8 +13,18 @@ def get_stock(db: Session, stock_symbol: str):
     return db.query(Stock).filter(Stock.symbol == stock_symbol).first()
 
 
-def get_users(db: Session, offset: int = 0, limit: int = 5):
-    return db.query(User).offset(offset).limit(limit).all()
+def get_users(db: Session, offset: Optional[int] = None, limit: Optional[int] = None):
+    if offset is None and limit is not None:
+        return db.query(User).limit(limit).all()
+
+    elif offset is not None and limit is None:
+        return db.query(User).offset(offset).all()
+
+    elif offset is not None and limit is not None:
+        return db.query(User).offset(offset).limit(limit).all()
+
+    else:
+        return db.query(User).all()
 
 
 def get_user(db: Session, user_id: int):
