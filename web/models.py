@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -29,7 +29,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, unique=True, index=True)
     first_name = Column(String)
     username = Column(String, unique=True, index=True)
+    periodic_task = Column(Boolean, default=False)
     stocks = relationship('Stock', secondary='stockuserrelation')
+
 
 # class Show(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)

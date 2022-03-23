@@ -36,8 +36,8 @@ class Stock(StatesGroup):
 async def start(message: types.Message):
     await Stock.stock.set()
 
-    await message.reply("Hi there! Let's create your stock portfolio. Typing tickers of stocks in following format: "
-                        "`NET PYPL DIS NFLX`")
+    await message.answer("Hi there! Let's create your stock portfolio. Typing tickers of stocks in following format: "
+                         "`NET PYPL DIS NFLX`")
 
 
 @dp.message_handler(state=Stock.stock)
@@ -53,8 +53,6 @@ async def process_stock(message: types.Message, state: FSMContext):
     print(f'checked_stocks: {checked_stocks}')
     unchecked_stocks = list(set(stocks).difference(set(checked_stocks)))
     print(f'unchecked_stocks: {unchecked_stocks}')
-
-
 
     id = message.from_user['id']
     print(id), print(type(id))
@@ -87,20 +85,20 @@ async def process_stock(message: types.Message, state: FSMContext):
                     async with session.post('http://127.0.0.1:8000/stocks/', headers=headers, json=data) as response:
                         res = json.loads(await response.text())
                         stock_id.append(res.get('id'))
-                        print(res)
-                        print(res.get('id'))
-                        print(type(res))
-
-
-                        print(response.status)
+                        # print(res)
+                        # print(res.get('id'))
+                        # print(type(res))
+                        #
+                        #
+                        # print(response.status)
 
                 else:
                     res = json.loads(await response.text())
                     stock_id.append(res.get('id'))
-                    print(res)
-                    print(res.get('id'))
-                    print(type(res))
-                    print(response.status)
+                    # print(res)
+                    # print(res.get('id'))
+                    # print(type(res))
+                    # print(response.status)
 
         data = {
             'id': id,
@@ -108,16 +106,20 @@ async def process_stock(message: types.Message, state: FSMContext):
             'username': username,
             'stocks': stock_id
         }
-        print(f'data: {data}')
+        # print(f'data: {data}')
 
         async with session.post(
                 'http://127.0.0.1:8000/users/', headers=headers, json=data) as response:
 
             print(await response.text())
-            print(response.headers)
+            # print(response.headers)
 
-            await message.reply(f'Cool! Your portfolio is ready! All stocks symbols were included in your portfolio, '
+            await message.answer(f'Cool! Your portfolio is ready! All stocks symbols were included in your portfolio, '
                                 f'except following: {" ".join(unchecked_stocks)}')
+
+    await state.reset_state()
+    await state.reset_data()
+
 
 
 # try:
@@ -179,23 +181,32 @@ async def process_stock(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(content_types=['text'], commands='portfolio')
-async def look_portfolio(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        stock_list = data['stock']
-        match = re.findall(pattern=r'[ ]*\w+[ ]*', string=stock_list)
-        stocks = [mat.replace(' ', '') for mat in match]
-    stocks_info = get_stocks_info(stocks, country='united states')
-    print(message.from_user)
-    await bot.send_message(message.chat.id, stocks_info)
+async def look_portfolio(message: types.Message):
+    async with aiohttp.ClientSession() as session:
+        print(f'message.from_user from portfolio: {message.from_user}')
+        print(type(message.from_user))
+        print(message.from_user['id'])
+        user_id = message.from_user['id']
+        async with session.get('http://127.0.0.1:8000/users/{id}/', params={'user_id': user_id}) as response:
+            res = json.loads(await response.text())
+            print(res)
+
+            symbols = [stock['symbol'] for stock in res['stocks']]
+            stocks_info = get_stocks_info(symbols=symbols, country='united states')
+            await bot.send_message(chat_id=res['id'], text=stocks_info, disable_notification=False)
 
 
+@dp.message_handler(content_types=['text'], commands='mailing')
+async def enable_daily_mailing(message: types.Message):
+    async with aiohttp.ClientSession() as session:
+        pass
 
 
 async def periodic(sleep_for):
 
     while True:
         async with aiohttp.ClientSession() as session:
-            async with session.get('http://127.0.0.1:8000/users/') as response:
+            async with session.get('http://127.0.0.1:8000/filter-users/') as response:
                 res = json.loads(await response.text())
                 print(res)
 

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool
 
 
 class StockBase(BaseModel):
@@ -9,6 +9,14 @@ class StockBase(BaseModel):
 
     class Config:
         orm_mode = True
+        # schema_extra = {
+        #     'examples': [
+        #         {
+        #             'name': 'John Doe',
+        #             'age': 25,
+        #         }
+        #     ]
+        # }
 
 
 class StockSchema(StockBase):
@@ -24,12 +32,47 @@ class StockCreateSchema(BaseModel):
 
     class Config:
         orm_mode = True
+        # schema_extra = {
+        #     'examples': [
+        #         {
+        #             'name': 'John Doe',
+        #             'age': 25,
+        #         }
+        #     ]
+        # }
 
 
 class UserBase(BaseModel):
     id: int = 1
     first_name: str
     username: str
+    periodic_task: bool = False
+
+    class Config:
+        orm_mode = True
+        # schema_extra = {
+        #     'examples': [
+        #         {
+        #             'name': 'John Doe',
+        #             'age': 25,
+        #         }
+        #     ]
+        # }
+
+
+class UserPartialUpdate(BaseModel):
+    id: int = 1
+    periodic_task: bool = False
+    stocks: List[StockBase] = []
+
+    class Config:
+        orm_mode = True
+
+
+class UserPartialUpdateSchema(BaseModel):
+    id: int = 1
+    periodic_task: bool = False
+    stocks: List[int] = []
 
     class Config:
         orm_mode = True

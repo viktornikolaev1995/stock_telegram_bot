@@ -4,6 +4,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from . import models, schemas, crud
 from .database import SessionLocal, engine
+from sqlalchemy import update
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -41,13 +42,24 @@ def retrieve_users(offset: Optional[int] = None, limit: Optional[int] = None, db
     return users
 
 
+@app.get('/filter-users/', response_model=List[schemas.UserSchema], tags=['users'])
+def retrieve_filter_users_at_periodic_task_field(offset: Optional[int] = None, limit: Optional[int] = None, db: Session = Depends(get_db)):
+    filter_users = crud.get_filter_users(db, offset=offset, limit=limit)
+    return filter_users
+
+
 @app.get('/users/{id}/', response_model=schemas.UserSchema, tags=['users'])
 def retrieve_user(user_id, db: Session = Depends(get_db)):
     user = crud.get_user(db, user_id=user_id)
+
     if user is None:
         raise HTTPException(status_code=404, detail='User not found')
-
     return user
+
+
+@app.patch('/users/', response_model=schemas.UserPartialUpdate, tags=['users'])
+def partial_update_user(user: schemas.UserPartialUpdateSchema, db: Session = Depends(get_db)):
+    return crud.partial_update_user(db, user=user)
 
 
 @app.post('/stocks/', response_model=schemas.StockSchema, tags=['stocks'])
