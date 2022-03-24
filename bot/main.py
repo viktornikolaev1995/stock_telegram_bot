@@ -41,10 +41,9 @@ async def start(message: types.Message):
 
 
 @dp.message_handler(state=Stock.stock)
-async def process_stock(message: types.Message, state: FSMContext):
-    """
-    Process stock
-    """
+async def create_user_portfolio(message: types.Message, state: FSMContext):
+    """Create user portfolio"""
+
     match = re.findall(pattern=r'[ ]*\w+[ ]*', string=message.text)
     stocks = [mat.replace(' ', '') for mat in match]
     stock_list = get_stocks(country='united states')  # stocks, existed in financial market
@@ -70,7 +69,8 @@ async def process_stock(message: types.Message, state: FSMContext):
     async with aiohttp.ClientSession() as session:
 
         for stock in checked_stocks:
-            async with session.get('http://127.0.0.1:8000/stocks/{symbol}/', params={'stock_symbol': stock}) as response:
+            async with session.get('http://127.0.0.1:8000/stocks/{symbol}/', params={'stock_symbol': stock}) as \
+                    response:
 
                 if response.status == 404:
                     stock_data = get_stock_short_info(symbol=stock, country='united states')
@@ -180,8 +180,8 @@ async def process_stock(message: types.Message, state: FSMContext):
 #     await state.finish()
 
 
-@dp.message_handler(content_types=['text'], commands='portfolio')
-async def look_portfolio(message: types.Message):
+@dp.message_handler(content_types=['text'], commands='get_current_portfolio')
+async def get_current_portfolio(message: types.Message):
     async with aiohttp.ClientSession() as session:
         print(f'message.from_user from portfolio: {message.from_user}')
         print(type(message.from_user))
@@ -196,10 +196,47 @@ async def look_portfolio(message: types.Message):
             await bot.send_message(chat_id=res['id'], text=stocks_info, disable_notification=False)
 
 
-@dp.message_handler(content_types=['text'], commands='mailing')
+@dp.message_handler(content_types=['text'], commands='enable_daily_mailing')
 async def enable_daily_mailing(message: types.Message):
     async with aiohttp.ClientSession() as session:
-        pass
+        data = {
+            'id': message.from_user['id'],
+            'periodic_task': True
+        }
+        async with session.patch('http://127.0.0.1:8000/update-user-periodic-task/', json=data) as response:
+            print(response.status)
+            print(await response.text())
+            bot_message = f'{message.from_user["first_name"]}, your daily mailing at portfolio is enabled'
+            await bot.send_message(chat_id=data['id'], text=bot_message, disable_notification=False)
+
+
+@dp.message_handler(content_types=['text'], commands='disable_daily_mailing')
+async def disable_daily_mailing(message: types.Message):
+    async with aiohttp.ClientSession() as session:
+        data = {
+            'id': message.from_user['id'],
+            'periodic_task': False
+        }
+        async with session.patch('http://127.0.0.1:8000/update-user-periodic-task/', json=data) as response:
+            print(response.status)
+            print(await response.text())
+            bot_message = f'{message.from_user["first_name"]}, your daily mailing at portfolio is disabled'
+            await bot.send_message(chat_id=data['id'], text=bot_message, disable_notification=False)
+
+
+@dp.message_handler(content_types=['text'], commands='update_user_profile')
+async def update_user_profile(message: types.Message):
+    async with aiohttp.ClientSession() as session:
+        data = {
+            'id': message.from_user['id'],
+            'first_name': message.from_user['first_name'],
+            'username': message.from_user['username']
+        }
+        async with session.patch('http://127.0.0.1:8000/update-user-profile/', json=data) as response:
+            print(response.status)
+            print(await response.text())
+            bot_message = f'{message.from_user["first_name"]}, your profile is updated'
+            await bot.send_message(chat_id=data['id'], text=bot_message, disable_notification=False)
 
 
 async def periodic(sleep_for):
@@ -217,7 +254,8 @@ async def periodic(sleep_for):
         for d in res:
             symbols = [stock['symbol'] for stock in d['stocks']]
             stocks_info = get_stocks_info(symbols=symbols, country='united states')
-            await bot.send_message(chat_id=d['id'], text=stocks_info, disable_notification=False)
+            bot_message = f'Hello {d["first_name"]}\n{stocks_info}'
+            await bot.send_message(chat_id=d['id'], text=bot_message, disable_notification=False)
 
 
 if __name__ == '__main__':

@@ -48,7 +48,7 @@ def retrieve_filter_users_at_periodic_task_field(offset: Optional[int] = None, l
     return filter_users
 
 
-@app.get('/users/{id}/', response_model=schemas.UserSchema, tags=['users'])
+@app.get('/users/{id}/', response_model=schemas.UserSchema, tags=['user'])
 def retrieve_user(user_id, db: Session = Depends(get_db)):
     user = crud.get_user(db, user_id=user_id)
 
@@ -57,9 +57,14 @@ def retrieve_user(user_id, db: Session = Depends(get_db)):
     return user
 
 
-@app.patch('/users/', response_model=schemas.UserPartialUpdate, tags=['users'])
-def partial_update_user(user: schemas.UserPartialUpdateSchema, db: Session = Depends(get_db)):
-    return crud.partial_update_user(db, user=user)
+@app.patch('/update-user-profile/', response_model=schemas.UserSchema, tags=['user'])
+def partial_update_user_profile(user: schemas.UserProfilePartialUpdateSchema, db: Session = Depends(get_db)):
+    return crud.partial_update_user_profile(db, user=user)
+
+
+@app.patch('/update-user-periodic-task/', response_model=schemas.UserSchema, tags=['user'])
+def partial_update_user_periodic_task(user: schemas.UserPeriodicTaskPartialUpdateSchema, db: Session = Depends(get_db)):
+    return crud.partial_update_user_periodic_task(db, user=user)
 
 
 @app.post('/stocks/', response_model=schemas.StockSchema, tags=['stocks'])
@@ -67,7 +72,7 @@ def create_stock(stock: schemas.StockCreateSchema, db: Session = Depends(get_db)
     return crud.create_stock(db, stock=stock)
 
 
-@app.post('/users/', response_model=schemas.UserSchema, tags=['users'])
+@app.post('/users/', response_model=schemas.UserSchema, tags=['user'])
 def create_user(user: schemas.UserCreateSchema, db: Session = Depends(get_db)):
     return crud.create_user(db, user=user)
 
@@ -77,7 +82,7 @@ def delete_stock(stock_id: int = 1, db: Session = Depends(get_db)):
     return crud.delete_stock(db, stock_id=stock_id)
 
 
-@app.delete('/users/{id}/', tags=['users'])
+@app.delete('/users/{id}/', tags=['user'])
 def delete_user(user_id: int = 1, db: Session = Depends(get_db)):
     return crud.delete_user(db, user_id=user_id)
 

@@ -1,7 +1,8 @@
 from typing import Optional
 
 from sqlalchemy.orm import Session
-from .schemas import StockCreateSchema, UserCreateSchema, UserSchema, UserPartialUpdateSchema
+
+from . import schemas
 from .models import Stock, User, StockUserRelation
 
 
@@ -45,33 +46,26 @@ def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
 
 
-def partial_update_user(db: Session, user: UserPartialUpdateSchema):
-    # db_user = User(id=user.id, first_name=user.first_name, username=user.username, periodic_task=user.periodic_task)
-    # db_stocks = db.query(Stock).filter(Stock.id.in_((user.stocks))).all()
-    #
-    # # for stock in db_stocks:
-    # #     db_user.stocks.append(stock)
-    # payload = {
-    #     'id': db_user.id,
-    #     'first_name': db_user.first_name,
-    #     'username': db_user.username,
-    #     'periodic_task': db_user.periodic_task,
-    # }
+def partial_update_user_profile(db: Session, user: schemas.UserProfilePartialUpdateSchema):
+    db_user = db.query(User).filter(User.id == user.id).first()
+    db_user.first_name = user.first_name
+    db_user.username = user.username
+    db.commit()
+    return db_user
+
+
+def partial_update_user_periodic_task(db: Session, user: schemas.UserPeriodicTaskPartialUpdateSchema):
     db_user = db.query(User).filter(User.id == user.id).first()
     db_user.periodic_task = user.periodic_task
-    db_user.stocks = []
-    db_stocks = db.query(Stock).filter(Stock.id.in_((user.stocks))).all()
-
-    for stock in db_stocks:
-        db_user.stocks.append(stock)
-
     db.commit()
-
-    return user
-    # return db.query(User).filter(User.id == user.id).update()
+    return db_user
 
 
-def create_stock(db: Session, stock: StockCreateSchema):
+def partial_update_user_stocks(db: Session, user: schemas.UserStocksPartialUpdateSchema):
+    pass
+
+
+def create_stock(db: Session, stock: schemas.StockCreateSchema):
     stock = Stock(**stock.dict())
     db.add(stock)
     db.commit()
@@ -79,7 +73,7 @@ def create_stock(db: Session, stock: StockCreateSchema):
     return stock
 
 
-def create_user(db: Session, user: UserCreateSchema):
+def create_user(db: Session, user: schemas.UserCreateSchema):
     db_user = User(id=user.id, first_name=user.first_name, username=user.username, periodic_task=user.periodic_task)
     db_stocks = db.query(Stock).filter(Stock.id.in_((user.stocks))).all()
 

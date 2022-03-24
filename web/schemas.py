@@ -50,32 +50,62 @@ class UserBase(BaseModel):
 
     class Config:
         orm_mode = True
-        # schema_extra = {
-        #     'examples': [
-        #         {
-        #             'name': 'John Doe',
-        #             'age': 25,
-        #         }
-        #     ]
-        # }
+        schema_extra = {
+            'example':
+                {
+                    'id': 1,
+                    'first_name': 'Mikel',
+                    'username': 'mikel',
+                    'periodic_task': False
+                }
+            }
 
 
-class UserPartialUpdate(BaseModel):
+class UserProfilePartialUpdateSchema(BaseModel):
     id: int = 1
-    periodic_task: bool = False
-    stocks: List[StockBase] = []
+    first_name: str
+    username: str
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            'example':
+                {
+                    'id': 1,
+                    'first_name': 'Mikel',
+                    'username': 'mikel',
+                }
+            }
 
 
-class UserPartialUpdateSchema(BaseModel):
+class UserPeriodicTaskPartialUpdateSchema(BaseModel):
     id: int = 1
     periodic_task: bool = False
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            'example':
+                {
+                    'id': 1,
+                    'periodic_task': False,
+                }
+            }
+
+
+class UserStocksPartialUpdateSchema(BaseModel):
+    id: int = 1
     stocks: List[int] = []
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            'example':
+                {
+                    'id': 1,
+                    'stocks': [1, 2]
+                }
+            }
 
 
 class UserCreateSchema(UserBase):
@@ -84,3 +114,16 @@ class UserCreateSchema(UserBase):
 
 class UserSchema(UserBase):
     stocks: List[StockBase] = []
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            'example':
+                {
+                    'id': 1,
+                    'first_name': 'Mikel',
+                    'username': 'mikel',
+                    'periodic_task': False,
+                    'stocks': [1, 2]
+                }
+            }
