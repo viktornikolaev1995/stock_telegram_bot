@@ -46,7 +46,7 @@ def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
 
 
-def partial_update_user_profile(db: Session, user: schemas.UserProfilePartialUpdateSchema):
+def update_user_profile(db: Session, user: schemas.UserProfilePartialUpdateSchema):
     db_user = db.query(User).filter(User.id == user.id).first()
     db_user.first_name = user.first_name
     db_user.username = user.username
@@ -54,15 +54,30 @@ def partial_update_user_profile(db: Session, user: schemas.UserProfilePartialUpd
     return db_user
 
 
-def partial_update_user_periodic_task(db: Session, user: schemas.UserPeriodicTaskPartialUpdateSchema):
+def update_user_periodic_task(db: Session, user: schemas.UserPeriodicTaskPartialUpdateSchema):
     db_user = db.query(User).filter(User.id == user.id).first()
     db_user.periodic_task = user.periodic_task
     db.commit()
     return db_user
 
 
-def partial_update_user_stocks(db: Session, user: schemas.UserStocksPartialUpdateSchema):
-    pass
+def update_user_portfolio(db: Session, user: schemas.UserStocksPartialUpdateSchema, query: Optional[str]):
+    db_user = db.query(User).filter(User.id == user.id).first()
+    db_stocks = db.query(Stock).filter(Stock.id.in_(user.stocks)).all()
+
+    if query == 'add':
+        for stock in db_stocks:
+            db_user.stocks.append(stock)
+    elif query == 'delete':
+        print(f'db_user.stocks: {db_user.stocks}')
+        for stock in db_stocks:
+            print(f'query: {query}')
+            db_user.stocks.remove(stock)
+        print(f'db_user.stocks: {db_user.stocks}')
+        print(f'query: {query}')
+
+    db.commit()
+    return db_user
 
 
 def create_stock(db: Session, stock: schemas.StockCreateSchema):
@@ -75,7 +90,7 @@ def create_stock(db: Session, stock: schemas.StockCreateSchema):
 
 def create_user(db: Session, user: schemas.UserCreateSchema):
     db_user = User(id=user.id, first_name=user.first_name, username=user.username, periodic_task=user.periodic_task)
-    db_stocks = db.query(Stock).filter(Stock.id.in_((user.stocks))).all()
+    db_stocks = db.query(Stock).filter(Stock.id.in_(user.stocks)).all()
 
     for stock in db_stocks:
         db_user.stocks.append(stock)

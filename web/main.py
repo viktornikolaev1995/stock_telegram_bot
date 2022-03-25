@@ -58,13 +58,19 @@ def retrieve_user(user_id, db: Session = Depends(get_db)):
 
 
 @app.patch('/update-user-profile/', response_model=schemas.UserSchema, tags=['user'])
-def partial_update_user_profile(user: schemas.UserProfilePartialUpdateSchema, db: Session = Depends(get_db)):
-    return crud.partial_update_user_profile(db, user=user)
+def update_user_profile(user: schemas.UserProfilePartialUpdateSchema, db: Session = Depends(get_db)):
+    return crud.update_user_profile(db, user=user)
 
 
 @app.patch('/update-user-periodic-task/', response_model=schemas.UserSchema, tags=['user'])
-def partial_update_user_periodic_task(user: schemas.UserPeriodicTaskPartialUpdateSchema, db: Session = Depends(get_db)):
-    return crud.partial_update_user_periodic_task(db, user=user)
+def update_user_periodic_task(user: schemas.UserPeriodicTaskPartialUpdateSchema, db: Session = Depends(get_db)):
+    return crud.update_user_periodic_task(db, user=user)
+
+
+@app.patch('/update-user-portfolio/', response_model=schemas.UserSchema, tags=['user'])
+def update_user_portfolio(user: schemas.UserStocksPartialUpdateSchema, db: Session = Depends(get_db),
+                          query: Optional[str] = None):
+    return crud.update_user_portfolio(db, user=user, query=query)
 
 
 @app.post('/stocks/', response_model=schemas.StockSchema, tags=['stocks'])

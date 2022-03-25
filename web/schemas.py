@@ -111,10 +111,6 @@ class UserStocksPartialUpdateSchema(BaseModel):
 class UserCreateSchema(UserBase):
     stocks: List[int] = []
 
-
-class UserSchema(UserBase):
-    stocks: List[StockBase] = []
-
     class Config:
         orm_mode = True
         schema_extra = {
@@ -126,4 +122,11 @@ class UserSchema(UserBase):
                     'periodic_task': False,
                     'stocks': [1, 2]
                 }
-            }
+        }
+
+
+class UserSchema(UserBase):
+    stocks: List[StockBase] = []
+
+    class Config:
+        orm_mode = True

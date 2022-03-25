@@ -9,7 +9,7 @@ from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import message, Message
+from aiogram.types import message, Message, BotCommand
 from aiogram.utils.markdown import text
 
 from invest_data import get_stocks_info, get_stocks, get_stock_short_info
@@ -28,23 +28,51 @@ dp = Dispatcher(bot, storage=storage)
 
 
 # States
-class Stock(StatesGroup):
-    stock = State()  # Will be represented in storage at 'Form.country'
+class CreatePortfolio(StatesGroup):
+    create_stocks = State()  # Will be represented in storage at 'Stock.stock'
 
 
-@dp.message_handler(commands='start')
+class UpdatePortfolio(StatesGroup):
+    update_or_delete_stocks = State()
+
+
+async def set_default_commands(dp):
+    commands = [
+        BotCommand(command='/start', description='Start using bot'),
+        BotCommand(command='/help', description='Display help'),
+        BotCommand(command='/create_portfolio', description='Create portfolio of stocks'),
+        BotCommand(command='/current_portfolio', description='Get current portfolio of stocks'),
+        BotCommand(command='/update_profile', description='Update profile, i.e your first_name, username, '
+                                                          'if they were changed'),
+        BotCommand(command='/enable_daily_mailing', description='Enable daily mailing at portfolio of stocks'),
+        BotCommand(command='/disable_daily_mailing', description='Disable daily mailing at portfolio of stocks'),
+        BotCommand(command='/update_portfolio', description='Update portfolio by adding or deleting stocks')
+    ]
+    await dp.bot.set_my_commands(commands, language_code='en')
+
+
+@dp.message_handler(commands=['start', 'help'])
 async def start(message: types.Message):
-    await Stock.stock.set()
-
-    await message.answer("Hi there! Let's create your stock portfolio. Typing tickers of stocks in following format: "
-                         "`NET PYPL DIS NFLX`")
+    await message.answer('Hi there! This bot can create your own portfolio of stocks, mostly in USA financial market')
 
 
-@dp.message_handler(state=Stock.stock)
-async def create_user_portfolio(message: types.Message, state: FSMContext):
+@dp.message_handler(commands='create_portfolio')
+async def create_user_portfolio(message: types.Message):
     """Create user portfolio"""
 
-    match = re.findall(pattern=r'[ ]*\w+[ ]*', string=message.text)
+    await CreatePortfolio.create_stocks.set()
+    await message.answer("Let's create your stock portfolio. Typing tickers of stocks in following format: "
+                         "`PYPL DIS NFLX`")
+
+
+@dp.message_handler(state=CreatePortfolio.create_stocks)
+async def process_user_portfolio(message: types.Message, state: FSMContext):
+    """Process user portfolio"""
+
+    async with state.proxy() as data:
+        data['create_stocks'] = message.text
+    print(data['create_stocks'])
+    match = re.findall(pattern=r'[ ]*\w+[ ]*', string=data['create_stocks'])
     stocks = [mat.replace(' ', '') for mat in match]
     stock_list = get_stocks(country='united states')  # stocks, existed in financial market
     print(stock_list)
@@ -64,59 +92,41 @@ async def create_user_portfolio(message: types.Message, state: FSMContext):
         'Content-Type': 'application/json'
     }
 
-    stock_id = []
-
     async with aiohttp.ClientSession() as session:
-
+        stock_id = []
         for stock in checked_stocks:
             async with session.get('http://127.0.0.1:8000/stocks/{symbol}/', params={'stock_symbol': stock}) as \
                     response:
-
                 if response.status == 404:
                     stock_data = get_stock_short_info(symbol=stock, country='united states')
-
                     data = {
                         'name': stock_data['name'],
                         'symbol': stock_data['symbol'],
                         'description': stock_data['description'],
                         'country': stock_data['country']
                     }
-
                     async with session.post('http://127.0.0.1:8000/stocks/', headers=headers, json=data) as response:
                         res = json.loads(await response.text())
                         stock_id.append(res.get('id'))
-                        # print(res)
-                        # print(res.get('id'))
-                        # print(type(res))
-                        #
-                        #
-                        # print(response.status)
-
                 else:
                     res = json.loads(await response.text())
                     stock_id.append(res.get('id'))
-                    # print(res)
-                    # print(res.get('id'))
-                    # print(type(res))
-                    # print(response.status)
-
         data = {
             'id': id,
             'first_name': first_name,
             'username': username,
             'stocks': stock_id
         }
-        # print(f'data: {data}')
-
         async with session.post(
                 'http://127.0.0.1:8000/users/', headers=headers, json=data) as response:
 
             print(await response.text())
-            # print(response.headers)
-
-            await message.answer(f'Cool! Your portfolio is ready! All stocks symbols were included in your portfolio, '
-                                f'except following: {" ".join(unchecked_stocks)}')
-
+            if len(unchecked_stocks) > 0:
+                await message.answer(f'Cool! Your portfolio is created! All stocks symbols were included in your '
+                                     f'portfolio, except following: {" ".join(unchecked_stocks)}')
+            else:
+                await message.answer(f'Cool! Your portfolio is created! All stocks symbols were included in your '
+                                     f'portfolio')
     await state.reset_state()
     await state.reset_data()
 
@@ -180,7 +190,7 @@ async def create_user_portfolio(message: types.Message, state: FSMContext):
 #     await state.finish()
 
 
-@dp.message_handler(content_types=['text'], commands='get_current_portfolio')
+@dp.message_handler(content_types=['text'], commands='current_portfolio')
 async def get_current_portfolio(message: types.Message):
     async with aiohttp.ClientSession() as session:
         print(f'message.from_user from portfolio: {message.from_user}')
@@ -190,10 +200,25 @@ async def get_current_portfolio(message: types.Message):
         async with session.get('http://127.0.0.1:8000/users/{id}/', params={'user_id': user_id}) as response:
             res = json.loads(await response.text())
             print(res)
-
             symbols = [stock['symbol'] for stock in res['stocks']]
             stocks_info = get_stocks_info(symbols=symbols, country='united states')
             await bot.send_message(chat_id=res['id'], text=stocks_info, disable_notification=False)
+
+
+@dp.message_handler(content_types=['text'], commands='update_profile')
+async def update_user_profile(message: types.Message):
+    """Update user profile"""
+    async with aiohttp.ClientSession() as session:
+        data = {
+            'id': message.from_user['id'],
+            'first_name': message.from_user['first_name'],
+            'username': message.from_user['username']
+        }
+        async with session.patch('http://127.0.0.1:8000/update-user-profile/', json=data) as response:
+            print(response.status)
+            print(await response.text())
+            bot_message = f'{message.from_user["first_name"]}, your profile is updated'
+            await bot.send_message(chat_id=data['id'], text=bot_message, disable_notification=False)
 
 
 @dp.message_handler(content_types=['text'], commands='enable_daily_mailing')
@@ -224,19 +249,115 @@ async def disable_daily_mailing(message: types.Message):
             await bot.send_message(chat_id=data['id'], text=bot_message, disable_notification=False)
 
 
-@dp.message_handler(content_types=['text'], commands='update_user_profile')
-async def update_user_profile(message: types.Message):
+@dp.message_handler(content_types=['text'], commands='update_portfolio')
+async def update_user_portfolio(message: types.Message):
+    await UpdatePortfolio.update_or_delete_stocks.set()
+    await bot.send_message(
+        chat_id=message.from_user['id'],
+        text='If you want to add stock, typing `add INTC`. If you would want to add more stocks, typing `add INTC '
+             'DIS`\nIf you want to delete stock, typing `delete INTC`. If you would want to delete more '
+             'stocks, typing `delete INTC DIS`'
+    )
+
+
+@dp.message_handler(state=UpdatePortfolio.update_or_delete_stocks)
+async def process_update_user_portfolio(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['update_or_delete_stocks'] = message.text
+    print(data['update_or_delete_stocks'])
+    add_or_delete_match = re.findall(pattern=r'(add|delete)', string=data['update_or_delete_stocks'])
+    print(add_or_delete_match)
+    stocks_match = re.findall(pattern=r'[^adddelete][ ]*\w+[ ]*', string=data['update_or_delete_stocks'])
+    print(stocks_match)
+    stocks = [mat.replace(' ', '') for mat in stocks_match]
+    id = message.from_user['id']
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    stock_id = []
+
     async with aiohttp.ClientSession() as session:
-        data = {
-            'id': message.from_user['id'],
-            'first_name': message.from_user['first_name'],
-            'username': message.from_user['username']
-        }
-        async with session.patch('http://127.0.0.1:8000/update-user-profile/', json=data) as response:
-            print(response.status)
-            print(await response.text())
-            bot_message = f'{message.from_user["first_name"]}, your profile is updated'
-            await bot.send_message(chat_id=data['id'], text=bot_message, disable_notification=False)
+        if 'add' in add_or_delete_match:
+            stock_list = get_stocks(country='united states')  # stocks, existed in financial market
+            print(stock_list)
+            checked_stocks = [stock for stock in stocks if stock in stock_list]
+            print(f'checked_stocks: {checked_stocks}')
+            unchecked_stocks = list(set(stocks).difference(set(checked_stocks)))
+            print(f'unchecked_stocks: {unchecked_stocks}')
+
+            for stock in checked_stocks:
+                async with session.get('http://127.0.0.1:8000/stocks/{symbol}/', params={'stock_symbol': stock}) as \
+                        response:
+                    if response.status == 404:
+                        stock_data = get_stock_short_info(symbol=stock, country='united states')
+                        data = {
+                            'name': stock_data['name'],
+                            'symbol': stock_data['symbol'],
+                            'description': stock_data['description'],
+                            'country': stock_data['country']
+                        }
+                        async with session.post('http://127.0.0.1:8000/stocks/', headers=headers, json=data) as \
+                                response:
+                            res = json.loads(await response.text())
+                            stock_id.append(res.get('id'))
+                    else:
+                        res = json.loads(await response.text())
+                        stock_id.append(res.get('id'))
+            data = {
+                'id': id,
+                'stocks': stock_id
+            }
+            async with session.patch('http://127.0.0.1:8000/update-user-portfolio/', params={'query': 'add'},
+                                     json=data) as response:
+                print(response.status)
+                print(await response.text())
+                if len(unchecked_stocks) > 0:
+                    await message.answer(f'Cool! Your portfolio is updated! All stocks symbols were added in your '
+                                         f'portfolio, except following: {" ".join(unchecked_stocks)}')
+                else:
+                    await message.answer(f'Cool! Your portfolio is updated! All stocks symbols were added in your '
+                                         f'portfolio')
+
+        elif 'delete' in add_or_delete_match:
+            print(stocks_match)
+            print(add_or_delete_match)
+
+            async with session.get('http://127.0.0.1:8000/users/{id}', params={'user_id': id}) as response:
+                print(response.status)
+                print(await response.text())
+                res = json.loads(await response.text())
+                existed_stocks = [stock for stock in stocks if stock in res['stocks']]
+                unexisted_stocks = list(set(stocks).difference(set(existed_stocks)))
+
+                for stock in existed_stocks:
+                    async with session.get('http://127.0.0.1:8000/stocks/{symbol}/', params={'stock_symbol': stock}) \
+                            as response:
+                        res = json.loads(await response.text())
+                        stock_id.append(res.get('id'))
+            data = {
+                'id': id,
+                'stocks': stock_id
+            }
+
+            async with session.patch('http://127.0.0.1:8000/update-user-portfolio/', params={'query': 'delete'},
+                                     json=data) as response:
+                print(response.status)
+                print(await response.text())
+                if len(unexisted_stocks) > 0:
+                    await message.answer(f'Cool! Your portfolio is updated! All stocks symbols were deleted in your '
+                                         f'portfolio, except following: {" ".join(unexisted_stocks)}')
+                else:
+                    await message.answer(f'Cool! Your portfolio is updated! All stocks symbols were deleted in your '
+                                         f'portfolio')
+        else:
+            await bot.send_message(
+                chat_id=message.from_user['id'],
+                text='Check whether right you typed about updating portfolio by adding or deleting stocks'
+            )
+
+    await state.reset_state()
+    await state.reset_data()
 
 
 async def periodic(sleep_for):
@@ -254,41 +375,11 @@ async def periodic(sleep_for):
         for d in res:
             symbols = [stock['symbol'] for stock in d['stocks']]
             stocks_info = get_stocks_info(symbols=symbols, country='united states')
-            bot_message = f'Hello {d["first_name"]}\n{stocks_info}'
+            bot_message = f'Hello, {d["first_name"]}\n{stocks_info}'
             await bot.send_message(chat_id=d['id'], text=bot_message, disable_notification=False)
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(periodic(60))
-    executor.start_polling(dp, skip_updates=True)
-
-
-
-# from fastapi import FastAPI
-# from time import time
-# import aiohttp
-# import asyncio
-#
-# app = FastAPI()
-#
-# URL = "http://httpbin.org/uuid"
-#
-#
-# async def request(session):
-#     async with session.get(URL) as response:
-#         return await response.text()
-#
-#
-# async def task():
-#     async with aiohttp.ClientSession() as session:
-#         tasks = [request(session) for i in range(100)]
-#         result = await asyncio.gather(*tasks)
-#         print(result)
-#
-#
-# @app.get('/')
-# async def f():
-#     start = time()
-#     await task()
-#     print("time: ", time() - start)
+    executor.start_polling(dp, skip_updates=True, on_startup=set_default_commands)
