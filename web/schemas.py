@@ -9,14 +9,6 @@ class StockBase(BaseModel):
 
     class Config:
         orm_mode = True
-        # schema_extra = {
-        #     'examples': [
-        #         {
-        #             'name': 'John Doe',
-        #             'age': 25,
-        #         }
-        #     ]
-        # }
 
 
 class StockSchema(StockBase):
@@ -32,14 +24,15 @@ class StockCreateSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        # schema_extra = {
-        #     'examples': [
-        #         {
-        #             'name': 'John Doe',
-        #             'age': 25,
-        #         }
-        #     ]
-        # }
+        schema_extra = {
+            'example':
+                {
+                    'name': 'PayPal Holdings Inc',
+                    'symbol': 'PYPL',
+                    'description': '',
+                    'country': 'united states'
+                }
+        }
 
 
 class UserBase(BaseModel):

@@ -78,7 +78,7 @@ def create_stock(stock: schemas.StockCreateSchema, db: Session = Depends(get_db)
     return crud.create_stock(db, stock=stock)
 
 
-@app.post('/users/', response_model=schemas.UserSchema, tags=['user'])
+@app.post('/users/', response_model=schemas.UserSchema, tags=['users'])
 def create_user(user: schemas.UserCreateSchema, db: Session = Depends(get_db)):
     return crud.create_user(db, user=user)
 

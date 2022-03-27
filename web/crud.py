@@ -63,7 +63,9 @@ def update_user_periodic_task(db: Session, user: schemas.UserPeriodicTaskPartial
 
 def update_user_portfolio(db: Session, user: schemas.UserStocksPartialUpdateSchema, query: Optional[str]):
     db_user = db.query(User).filter(User.id == user.id).first()
+    print(f'user.stocks: {user.stocks}')
     db_stocks = db.query(Stock).filter(Stock.id.in_(user.stocks)).all()
+    print(f'db_stocks: {db_stocks}')
 
     if query == 'add':
         for stock in db_stocks:

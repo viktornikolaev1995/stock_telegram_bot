@@ -323,12 +323,18 @@ async def process_update_user_portfolio(message: types.Message, state: FSMContex
             print(stocks_match)
             print(add_or_delete_match)
 
-            async with session.get('http://127.0.0.1:8000/users/{id}', params={'user_id': id}) as response:
+            async with session.get('http://127.0.0.1:8000/users/{id}/', params={'user_id': id}) as response:
                 print(response.status)
                 print(await response.text())
                 res = json.loads(await response.text())
-                existed_stocks = [stock for stock in stocks if stock in res['stocks']]
+                print(res)
+                print(type(res))
+                print(res['stocks'])
+                current_portfolio = [stock['symbol'] for stock in res['stocks']]
+                existed_stocks = [stock for stock in stocks if stock in current_portfolio]
+                print(existed_stocks)
                 unexisted_stocks = list(set(stocks).difference(set(existed_stocks)))
+                print(unexisted_stocks)
 
                 for stock in existed_stocks:
                     async with session.get('http://127.0.0.1:8000/stocks/{symbol}/', params={'stock_symbol': stock}) \
