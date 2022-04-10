@@ -31,22 +31,3 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     periodic_task = Column(Boolean, default=False)
     stocks = relationship('Stock', secondary='stockuserrelation')
-
-
-# class Show(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     title = db.Column(db.String(200), unique=True, nullable=False)
-#     studio = db.relationship("Studio", secondary="show_studio",
-#                              back_populates="show")
-#
-# class Studio(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(100), unique=True, nullable=False)
-#     show = db.relationship("Show", secondary="show_studio",
-#                            back_populates="studio")
-#
-# class ShowStudio(db.Model):
-#     show_id = db.Column(db.Integer, db.ForeignKey(Show.id, ondelete="CASCADE"),
-#                         primary_key=True)
-#     studio_id = db.Column(db.Integer, db.ForeignKey(Studio.id, ondelete="CASCADE"),
-#                           primary_key=True)
